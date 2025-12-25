@@ -1,0 +1,6 @@
+gdstk>=0.9
+shapely>=2.0
+trimesh>=4.0
+numpy>=1.24
+pyglet<2
+mapbox-earcut

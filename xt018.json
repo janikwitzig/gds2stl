@@ -1,0 +1,52 @@
+{
+  "2": {
+    "name": "nwell",
+    "datatype": 0,
+    "color": [255, 192, 203, 200],
+    "subtract": [7, 8],
+    "z_start": 0
+  },
+  "3": {
+    "name": "diff",
+    "datatype": 0,
+    "color": [255, 0, 0, 200],
+    "z_start": 0
+  },
+  "7": {
+    "name": "pimp",
+    "datatype": 0,
+    "color": [128, 0, 128, 200],
+    "subtract": [3],
+    "z_start": 0
+  },
+  "8": {
+    "name": "nimp",
+    "datatype": 0,
+    "color": [255, 192, 203, 200],
+    "subtract": [3],
+    "z_start": 0
+  },
+  "13": {
+    "name": "poly",
+    "datatype": 0,
+    "color": [0, 255, 0, 200],
+    "height": 0.1
+  },
+  "15": {
+    "name": "cont",
+    "datatype": 0,
+    "color": [0, 0, 255, 200],
+    "extrude_down_to": [13, 3]
+  },
+  "16": {
+    "name": "metal1",
+    "datatype": 0,
+    "color": [192, 192, 192, 200],
+    "height": 0.1
+  },
+  "230": {
+    "name": "via1",
+    "datatype": 0,
+    "color": [255, 255, 0, 200]
+  }
+}
