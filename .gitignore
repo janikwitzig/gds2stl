@@ -1,0 +1,4 @@
+*.gds
+**/__pycache__
+*.pyc
+.venv/

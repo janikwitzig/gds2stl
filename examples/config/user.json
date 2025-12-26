@@ -1,0 +1,42 @@
+{
+  "default_z_start": 0,
+  "layers": {
+    "nwell": {
+      "color": [255, 255, 0]
+    },
+    "diff": {
+      "color": [255, 0, 0, 200]
+    },
+    "ptype": {
+      "color": [0, 0, 255, 200]
+    },
+    "ntype": {
+      "color": [0, 255, 255, 200]
+    },
+    "poly": {
+      "color": [0, 255, 0, 200],
+      "height": 0.1
+    },
+    "cont": {
+      "color": [0, 0, 255, 200]
+    },
+    "metal1": {
+      "height": 0.1
+    },
+    "via1": {
+    },
+    "metal2": {
+      "height": 0.1
+    },
+    "via2": {
+    },
+    "metal3": {
+      "height": 0.1
+    },
+    "via3": {
+    },
+    "metal4": {
+      "height": 0.1
+    }
+  }
+}

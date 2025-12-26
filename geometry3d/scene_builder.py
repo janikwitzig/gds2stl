@@ -30,13 +30,15 @@ class SceneBuilder:
             if z_start is None:
                 layer["z_start"] = None
 
+        sorted_layers = self.layer_config.items()
         # Layers sorted by explicit z_start if present, otherwise by key
-        sorted_layers = sorted(
-            self.layer_config.items(),
-            key=lambda x: (x[1]["z_start"] if x[1]["z_start"] is not None else float('inf'))
-        )
+        # sorted_layers = sorted(
+        #     self.layer_config.items(),
+        #     key=lambda x: (x[1]["z_start"] if x[1]["z_start"] is not None else float('inf'))
+        # )
 
         for key, cfg in sorted_layers:
+            # print("Processing layer", key)
             layer_name = cfg["name"]
             polys = layer_polygons.get((int(key), cfg.get("datatype", 0)), [])
 
@@ -75,15 +77,21 @@ class SceneBuilder:
             # Handle extrude_down_to
             extrude_down_layers = cfg.get("extrude_down_to", [])
             down_union = None
+            down_layer_nos = []
+            down_layers = {}
             if extrude_down_layers:
-                print("Extruding down for layer", layer_name, "to layers", extrude_down_layers)
                 down_polys = []
                 for l in extrude_down_layers:
+                    down_layer_nos.append(l)
+                    down_layers[l] = unary_union(layer_polygons.get((l, 0), []))
                     down_polys.extend(layer_polygons.get((l, 0), []))
                 if down_polys:
                     down_union = unary_union(down_polys)
 
-            for poly in flat_polys:
+            n_polys = len(flat_polys)
+            for i, poly in enumerate(flat_polys):
+                # print(f"  Extruding polygon {i+1}/{n_polys}")
+
                 if poly.is_empty:
                     continue
 
@@ -96,26 +104,30 @@ class SceneBuilder:
 
                 for single_poly in polys_to_extrude:
                     extrude_height = height
-                    z_offset = z_start
+                    z_low = z_start
+
 
                     if down_union:
                         # Intersection in XY with extrude-down layers
                         intersection = single_poly.intersection(down_union)
                         if intersection.is_empty:
                             continue
+                        for l in down_layer_nos:
+                            if single_poly.intersects(down_layers[l]):
+                                extrude_height += z_start - layer_tops[l]
+                                z_low = layer_tops[l]
 
                         if isinstance(intersection, Polygon):
                             single_poly = intersection
                         elif isinstance(intersection, MultiPolygon):
-                            # Keep all polygon parts
                             polys_to_process = list(intersection.geoms)
                         else:
-                            # LineString / MultiLineString / Point → nothing to extrude
                             continue
 
 
                     mesh = trimesh.creation.extrude_polygon(single_poly, height=extrude_height, engine="earcut")
-                    mesh.apply_translation([0, 0, z_offset])
+                    mesh.apply_translation([0, 0, z_low])
+                    layer_tops[int(key)] = z_low + extrude_height
 
                     color = cfg.get("color", [200, 200, 200, 100])
                     mesh.visual.face_colors = np.array(color, dtype=np.uint8)

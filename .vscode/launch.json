@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "program": "${file}",
+            "request": "launch",
+            "args": ["kicore_dig_top.gds"]
+        }
+    ]
+}

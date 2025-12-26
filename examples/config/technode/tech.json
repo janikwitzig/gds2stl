@@ -1,0 +1,11 @@
+{
+  "subtract": {
+    "nwell": ["ptype", "ntype"],
+    "ptype": ["diff"],
+    "ntype": ["diff"]
+  },
+
+  "extend_down_to": {
+    "cont": ["poly", "diff"]
+  }
+}

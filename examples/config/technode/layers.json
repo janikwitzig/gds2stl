@@ -1,0 +1,21 @@
+{
+  "nwell":    { "layer": 2,  "datatype": 0 },
+  "diff":     { "layer": 3,  "datatype": 0 },
+  "ptype":    { "layer": 7,  "datatype": 0 },
+  "ntype":    { "layer": 8,  "datatype": 0 },
+  "poly":     { "layer": 13, "datatype": 0 },
+  "cont":     { "layer": 15, "datatype": 0 },
+  "metal1":   { "layer": 16, "datatype": 0 },
+  "via1":     { "layer": 17, "datatype": 0 },
+  "metal2":   { "layer": 18, "datatype": 0 },
+  "via2":     { "layer": 27, "datatype": 0 },
+  "metal3":   { "layer": 28, "datatype": 0 },
+  "via3":     { "layer": 29, "datatype": 0 },
+  "metal4":   { "layer": 31, "datatype": 0 },
+  "via4":     { "layer": 32, "datatype": 0 },
+  "metal5":   { "layer": 50, "datatype": 0 },
+  "viatop":   { "layer": 51, "datatype": 0 },
+  "mettop":   { "layer": 33, "datatype": 0 },
+  "viathick": { "layer": 36, "datatype": 0 },
+  "metthick": { "layer": 35, "datatype": 0 }
+}
