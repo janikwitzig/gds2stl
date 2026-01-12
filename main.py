@@ -46,33 +46,22 @@ def main():
     user_cfg  = load_user_config(userconfig)
 
     gdshandler = GDSHandler()
-    gdshandler.load(gdsfile)
-    gdshandler.flatten()
-
-
-    cell = gdshandler.get_cell()
-    if cell is None:
-        console.print("No cell found in GDS file.", style="red")
-        return
-    
+    cell = gdshandler.load(gdsfile)
+    cell = gdshandler.flatten(cell)
     bounds = cell.bounding_box()
     if bounds is None:
         return
     (xmin, ymin), (xmax, ymax) = bounds
 
     print_bounding_box((xmin, ymin, xmax, ymax), cut=args.cut)
-
     
-    
-    console.print(f"Cell '{cell.name}' loaded with {gdshandler.polygon_count} polygons, {gdshandler.path_count} paths, and {gdshandler.reference_count} references.", style="green")
-    store = LayerStore(cell)
-
     if args.cut is not None:
         xmin, ymin, xmax, ymax = args.cut
         console.print(f"Cutting cell with rectangle: ({xmin}, {ymin}) - ({xmax}, {ymax})")
-        store.cut_with_rectangle(xmin, ymin, xmax, ymax)
+        cell = gdshandler.cut_cell_with_rectangle(cell, xmin, ymin, xmax, ymax)
         console.print("Cell cut completed.", style="green")
 
+    store = LayerStore(cell)
 
     # --- 2D build ---
     shapes = build_shapes(store, tech_cfg["layers"])

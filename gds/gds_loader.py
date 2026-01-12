@@ -6,13 +6,10 @@ from rich.status import Status
 from rich.progress import Progress
 from util.ui import console
 
+type Cell = gdstk.Cell
 class GDSHandler:
-    def __init__(self, scale=1.0):
-        self.__scale = scale
-        self.__cell = None
-        self.__n_polygons = None
 
-    def load(self, filename):
+    def load(self, filename) -> Cell:
         with Status(f"Loading GDS file {filename}...", console=console) as status:
             lib = gdstk.read_gds(filename)
             top_level = lib.top_level()
@@ -20,110 +17,69 @@ class GDSHandler:
                 status.update("No top-level cells found", spinner="dots12")
                 raise RuntimeError("No top-level cells found")
             cell = top_level[0]
-            self.__cell = cell
+            console.print(lib.layers_and_datatypes())
         console.print(f"Loaded GDS file {filename}")
 
-    def scale(self, factor: float):
-        with Status(f"Scaling cell by factor {factor}...", console=console) as status:
-            cell = self.__cell
-            if cell is None or type(cell) is not gdstk.Cell:
-                status.update("No cell loaded", spinner="dots12")
-                return
-            for poly in cell.polygons:
-                for point in poly.points:
-                    point = (point[0] * factor, point[1] * factor)
-            self.__cell = cell
+        if type(cell) is not gdstk.Cell:
+            raise RuntimeError("No valid cell found in GDS file")
         
-
-    def flatten(self):
+        return cell
+        
+    def flatten(self, cell: Cell) -> Cell:
         with Status("Flattening cell...", console=console) as status:
-            cell = self.__cell
-            if cell is None or type(cell) is not gdstk.Cell:
-                status.update("No cell loaded", spinner="dots12")
-                return
-            self.__cell = cell.flatten()
-        console.print("Cell flattened")
 
-    @property
-    def name(self):
-        if self.__cell is None:
-            return ""
-        return self.__cell.name
+            flattened_cell = cell.flatten()
 
-    @property
-    def polygon_count(self):
-        if self.__cell is None or type(self.__cell) is not gdstk.Cell:
-            return 0
-        if self.__n_polygons is None:
-            self.__n_polygons = len(self.__cell.polygons)
-        return self.__n_polygons
-    
-    @property
-    def reference_count(self):
-        if self.__cell is None or type(self.__cell) is not gdstk.Cell:
-            return 0
-        return len(self.__cell.references)
-    
-    @property
-    def path_count(self):
-        if self.__cell is None or type(self.__cell) is not gdstk.Cell:
-            return 0
-        return len(self.__cell.paths)
-
-
-
-
-    def cut_cell_with_rectangle(self, xmin, ymin, xmax, ymax):
-        if self.__cell is None or type(self.__cell) is not gdstk.Cell:
-            console.print("No cell loaded", style="red")
-            return
-        clip = box(xmin, ymin, xmax, ymax)
-        new_cell = gdstk.Cell(f"{self.__cell.name}")
-
-        n_polygons = len(self.__cell.polygons)
-        console.print(f"Cutting {n_polygons} polygons...", style="blue")
-        with Progress(console=console) as progress:
-            task = progress.add_task("Cutting...", total=len(self.__cell.polygons))
-
-            for poly in self.__cell.polygons:
-                progress.update(task, advance=1)
-                shp = Polygon(poly.points)
-                clipped = shp.intersection(clip)
-
-                if clipped.is_empty:
-                    continue
-
-                if isinstance(clipped, Polygon):
-                    polys = [clipped]
-                elif isinstance(clipped, MultiPolygon):
-                    polys = clipped.geoms
-                else:
-                    continue
-
-                for p in polys:
-                    coords = p.exterior.coords
-                    coords_sequence: list[tuple[float, float]] = [(float(c[0]), float(c[1])) for c in coords]
-                    
+            new_cell = gdstk.Cell(f"{cell.name}")
+            for poly in flattened_cell.polygons:
+                new_cell.add(
+                    poly
+                )
+            for path in flattened_cell.paths:
+                path_polys = path.to_polygons()
+                for p in path_polys:
                     new_cell.add(
                         gdstk.Polygon(
-                            points=coords_sequence,
-                            layer=poly.layer,
-                            datatype=poly.datatype,
+                            points=p.points,
+                            layer=p.layer,
+                            datatype=p.datatype,
                         )
                     )
 
-        self.__cell = new_cell
+        console.print("Cell flattened")
+        return new_cell
+
+    def cut_cell_with_rectangle(self, cell: Cell, xmin: float, ymin: float, xmax: float, ymax: float) -> Cell:
+        with Status("Cutting cell with rectangle...", console=console) as status:
+            if len(cell.paths) > 0 or len(cell.references) > 0:
+                console.print("Cell must be flattened before cutting. Flattening now...", style="yellow")
+                self.flatten(cell)
+
+            status.update('Slicing along x-axis...')
+            cell_polys = cell.polygons
+            columns_polys = gdstk.slice(cell_polys, axis="x", position=[xmin, xmax])
+            mid_col_polys = columns_polys[1]
+
+            status.update('Slicing along y-axis...')
+            rows_polys = gdstk.slice(mid_col_polys, axis="y", position=[ymin, ymax])
+            mid_cell_polys = rows_polys[1]
+
+            new_cell = gdstk.Cell(f"{cell.name}_cut")
+            new_cell.add(*mid_cell_polys)
+            return new_cell
         console.print("Cutting done")
-    
-    def get_cell(self) -> Cell | None:
-        if self.__cell is None or type(self.__cell) is not gdstk.Cell:
-            console.print("No cell loaded", style="red")
-            return None
 
-        return self.__cell
-    
-    def save_as_svg(self, cell: gdstk.Cell, filename: str):
-        with Status(f"Saving cell as SVG to {filename}...", console=console) as status:
-            cell.write_svg(filename)
 
-        console.print(f"Saved SVG to {filename}")
+    def __calculate_slice_positions(self, num_cuts: int, span: float) -> list[float]:
+        """
+        Calculate slice positions along one axis.
+        
+        Args:
+            num_cuts: Number of cuts to make
+            span: Total span along the axis
+        
+        Returns:
+            List of slice positions
+        """
+        step = span / (num_cuts + 1)
+        return [(i + 1) * step for i in range(num_cuts)]
